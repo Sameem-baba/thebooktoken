@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import ClaimableRewards from "../components/ClaimableRewards";
 import StakedNFTs from "../components/StakedNFTs";
 import UnStakedNFTs from "../components/UnStakedNFTs";
+import Head from "next/head";
 
 const Staking = () => {
   const [stakedNFTs, setStakedNFTs] = useState([
@@ -26,6 +27,10 @@ const Staking = () => {
   };
   return (
     <div className="bg-gray-800 md:pt-20 ">
+      <Head>
+        <title>The Book Token - Staking</title>
+        <link rel="icon" href="/logo.png" />
+      </Head>
       <div className="max-w-7xl mx-auto">
         <Header />
         <ClaimableRewards rewards={"10"} balance="10" />
