@@ -1,8 +1,49 @@
 /* eslint-disable @next/next/no-img-element */
 // components/StakedNFTs.js
-import React from "react";
+import {
+  ThirdwebNftMedia,
+  Web3Button,
+  useAddress,
+  useContract,
+  useContractRead,
+  useOwnedNFTs,
+} from "@thirdweb-dev/react";
+import {
+  STAKE_CONTRACT_ADDRESSES,
+  STAKE_TOKEN_ADDRESSES,
+} from "../constants/addresses";
 
-const UnStakedNFTs = ({ unStakedNFTs, onWithdraw }: any) => {
+const UnStakedNFTs = () => {
+  const { contract: bookTokenContract } = useContract(
+    STAKE_TOKEN_ADDRESSES,
+    "nft-drop"
+  );
+  const { contract: stakingContract } = useContract(STAKE_CONTRACT_ADDRESSES);
+  const address = useAddress();
+
+  const { data: myBookNFTs } = useOwnedNFTs(bookTokenContract, address);
+
+  const stakeNFT = async (nftId: string) => {
+    if (!address) return;
+
+    console.log(address);
+
+    const isApproved = await bookTokenContract?.isApproved(
+      address,
+      STAKE_CONTRACT_ADDRESSES
+    );
+
+    if (!isApproved) {
+      await bookTokenContract?.setApprovalForAll(
+        STAKE_CONTRACT_ADDRESSES,
+        true
+      );
+    }
+
+    await stakingContract?.call("stake", [[nftId]]);
+  };
+
+  // console.log(myBookNFTs);
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl uppercase tracking-widest text-gray-500 mb-4">
@@ -10,21 +51,24 @@ const UnStakedNFTs = ({ unStakedNFTs, onWithdraw }: any) => {
       </h1>
 
       <div className="grid md:grid-cols-4 gap-10">
-        {unStakedNFTs.map((nft: any, index: any) => (
+        {myBookNFTs?.map((nft, index) => (
           <div key={index} className="bg-black p-6 rounded-lg shadow-md mb-4">
             <div className="mb-4">
-              <img src={nft.image} alt={nft.name} className=" rounded-md" />
+              <ThirdwebNftMedia
+                metadata={nft.metadata}
+                className=" rounded-md"
+              />
             </div>
             <div className="mb-4">
-              <p className="text-lg font-semibold">{nft.name}</p>
+              <p className="text-lg font-semibold">{nft.metadata.name}</p>
             </div>
 
-            <button
-              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-red-600 focus:outline-none focus:ring focus:border-red-300"
-              onClick={() => onWithdraw(index)}
+            <Web3Button
+              contractAddress={STAKE_CONTRACT_ADDRESSES}
+              action={() => stakeNFT(nft.metadata.id)}
             >
               Stake
-            </button>
+            </Web3Button>
           </div>
         ))}
       </div>

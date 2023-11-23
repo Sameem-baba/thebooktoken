@@ -4,27 +4,20 @@ import ClaimableRewards from "../components/ClaimableRewards";
 import StakedNFTs from "../components/StakedNFTs";
 import UnStakedNFTs from "../components/UnStakedNFTs";
 import Head from "next/head";
+import { useAddress, useContract, useContractRead } from "@thirdweb-dev/react";
+import { STAKE_CONTRACT_ADDRESSES } from "../constants/addresses";
+import { BigNumber } from "ethers";
 
 const Staking = () => {
-  const [stakedNFTs, setStakedNFTs] = useState([
-    { name: "The Book Token #1", image: "/nft1.png" },
-    { name: "The Book Token #2", image: "/nft2.png" },
-    // Add more NFTs as needed
-  ]);
+  const address = useAddress();
 
-  const handleClaim = () => {
-    // Add logic for claiming rewards
-    console.log("Rewards claimed!");
-  };
+  const { contract: stakingContract } = useContract(STAKE_CONTRACT_ADDRESSES);
+  const { data: stakedBookNFTs } = useContractRead(
+    stakingContract,
+    "getStakeInfo",
+    [address]
+  );
 
-  const handleWithdraw = (index: any) => {
-    // Add logic for withdrawing the NFT at the specified index
-    console.log(`Withdraw NFT at index ${index}`);
-    // Update stakedNFTs state to remove the withdrawn NFT
-    const updatedNFTs = [...stakedNFTs];
-    updatedNFTs.splice(index, 1);
-    setStakedNFTs(updatedNFTs);
-  };
   return (
     <div className="bg-gray-800 md:pt-20 ">
       <Head>
@@ -34,8 +27,18 @@ const Staking = () => {
       <div className="max-w-7xl mx-auto">
         <Header />
         <ClaimableRewards rewards={"10"} balance="10" />
-        <StakedNFTs stakedNFTs={stakedNFTs} onWithdraw={handleWithdraw} />
-        <UnStakedNFTs unStakedNFTs={stakedNFTs} onWithdraw={handleWithdraw} />
+        <div className="container mx-auto p-4">
+          <h1 className="text-3xl uppercase tracking-widest text-gray-500 mb-4">
+            Your Staked NFTs
+          </h1>
+          {stakedBookNFTs &&
+            stakedBookNFTs[0].map((stakedNfts: BigNumber) => (
+              <div key={stakedNfts.toString()}>
+                <StakedNFTs tokenId={stakedNfts.toNumber()} />
+              </div>
+            ))}
+        </div>
+        <UnStakedNFTs />
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 // components/StakedNFTs.js
 import {
-  useAddress,
+  ThirdwebNftMedia,
   useContract,
-  useContractRead,
-  useTokenBalance,
+  useNFT,
+  Web3Button,
 } from "@thirdweb-dev/react";
 import React, { useEffect } from "react";
 import {
@@ -13,48 +13,49 @@ import {
   STAKE_TOKEN_ADDRESSES,
 } from "../constants/addresses";
 
-const StakedNFTs = ({ stakedNFTs, onWithdraw }: any) => {
-  const address = useAddress();
+interface NFTCardProps {
+  tokenId: number;
+}
 
-  const { contract: stakeTokenContract } = useContract(
+const StakedNFTs = ({ tokenId }: NFTCardProps) => {
+  const { contract: bookContract } = useContract(
     STAKE_TOKEN_ADDRESSES,
-    "token"
+    "nft-drop"
   );
-  const { contract: rewardTokenContract } = useContract(
-    REWARD_TOKEN_ADDRESSES,
-    "token"
-  );
-  const { contract: stakeContract } = useContract(
-    STAKE_CONTRACT_ADDRESSES,
-    "custom"
-  );
+  const { contract: stakingContract } = useContract(STAKE_CONTRACT_ADDRESSES);
 
-  const {
-    data: stakeInfo,
-    refetch: refetchStakeInfo,
-    isLoading: loadingStakeInfo,
-  } = useContractRead(stakeContract, "getStakeInfo", [address]);
+  const { data: nft } = useNFT(bookContract, tokenId);
 
-  const { data: stakeTokenBalance, isLoading: loadingStakeTokenBalance } =
-    useTokenBalance(stakeTokenContract, address);
-
-  const { data: rewardTokenBalance, isLoading: loadingRewardTokenBalance } =
-    useTokenBalance(rewardTokenContract, address);
-
-  useEffect(() => {
-    setInterval(() => {
-      refetchStakeInfo();
-    }, 10000);
-  }, []);
-
+  const withdrawNFT = async (nftId: string) => {
+    await stakingContract?.call("withdraw", [[nftId]]);
+  };
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl uppercase tracking-widest text-gray-500 mb-4">
-        Your Staked NFTs
-      </h1>
+    <div className="grid md:grid-cols-4 gap-10">
+      {nft && (
+        <>
+          <div
+            // key={index}
+            className="bg-black p-6 rounded-lg shadow-md mb-4"
+          >
+            <div className="mb-4">
+              {nft.metadata && <ThirdwebNftMedia metadata={nft.metadata} />}
+            </div>
+            <div className="mb-4">
+              <p className="text-lg font-semibold">{nft.metadata.name}</p>
+            </div>
 
-      <div className="grid md:grid-cols-4 gap-10">
-        {stakedNFTs.map((nft: any, index: any) => (
+            <Web3Button
+              contractAddress={STAKE_CONTRACT_ADDRESSES}
+              action={() => withdrawNFT(nft.metadata.id)}
+              // className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 focus:outline-none focus:ring focus:border-red-300"
+              // onClick={() => onWithdraw(index)}
+            >
+              Withdraw NFT
+            </Web3Button>
+          </div>
+        </>
+      )}
+      {/* {stakedNFTs.map((nft: any, index: any) => (
           <div key={index} className="bg-black p-6 rounded-lg shadow-md mb-4">
             <div className="mb-4">
               <img src={nft.image} alt={nft.name} className=" rounded-md" />
@@ -70,8 +71,7 @@ const StakedNFTs = ({ stakedNFTs, onWithdraw }: any) => {
               Withdraw NFT
             </button>
           </div>
-        ))}
-      </div>
+        ))} */}
     </div>
   );
 };
